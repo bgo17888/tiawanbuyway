@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/data/site";
 import { ArrowIcon } from "./ArrowIcon";
@@ -7,11 +6,10 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <article className="group overflow-hidden rounded-[1.7rem] border border-[#26382d]/9 bg-[#fffdf7]">
       <Link className="relative block aspect-[1.08] overflow-hidden bg-[#eee7d8]" href={`/products/${product.slug}`}>
-        <Image
+        <img
           alt={product.name}
-          className="object-cover transition duration-700 group-hover:scale-[1.035]"
-          fill
-          sizes="(max-width: 768px) 100vw, 33vw"
+          className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.035]"
+          loading="lazy"
           src={product.image}
         />
         {product.badge && (

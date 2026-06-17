@@ -1,9 +1,9 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowIcon } from "@/components/ArrowIcon";
 import { ProductCard } from "@/components/ProductCard";
 import { SectionHeading } from "@/components/SectionHeading";
 import { products } from "@/data/site";
+import { withBasePath } from "@/lib/site";
 
 export const metadata = {
   title: "優能農產品牌館",
@@ -24,7 +24,11 @@ export default function YounengPage() {
             <p className="mt-6 text-xl leading-9 text-white/82">青農返鄉，讓雞蛋回歸自然與安心。</p>
           </div>
           <div className="relative min-h-[480px]">
-            <Image alt="優能農產品牌主視覺" className="object-cover" fill priority sizes="(max-width: 1024px) 100vw, 50vw" src="/images/product-eggs.png" />
+            <img
+              alt="優能農產品牌主視覺"
+              className="absolute inset-0 h-full w-full object-cover"
+              src={withBasePath("/images/product-eggs.png")}
+            />
           </div>
         </div>
       </section>

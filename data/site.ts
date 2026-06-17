@@ -1,3 +1,5 @@
+import { withBasePath } from "@/lib/site";
+
 export type ProductCategory = "蛋品" | "米糧" | "季節限定";
 
 export type Product = {
@@ -19,7 +21,7 @@ export const products: Product[] = [
     name: "放牧鮮蛋",
     category: "蛋品",
     origin: "彰化｜優能農產",
-    image: "/images/product-eggs.png",
+    image: withBasePath("/images/product-eggs.png"),
     eyebrow: "每日新鮮集蛋",
     description: "以友善飼養和舒適環境照顧母雞，帶來蛋香濃郁、風味自然的日常好蛋。",
     features: ["友善飼養", "蛋香濃郁", "新鮮直送"],
@@ -31,7 +33,7 @@ export const products: Product[] = [
     name: "靈芝蛋",
     category: "蛋品",
     origin: "彰化｜優能農產",
-    image: "/images/product-eggs.png",
+    image: withBasePath("/images/product-eggs.png"),
     eyebrow: "機能日常選擇",
     description: "從飼養管理到配送品質都仔細把關，適合家庭日常料理與穩定補充。",
     features: ["特色機能蛋品", "家庭常備", "產地配送"],
@@ -42,7 +44,7 @@ export const products: Product[] = [
     name: "富里香米",
     category: "米糧",
     origin: "花蓮｜富里鄉",
-    image: "/images/product-rice.png",
+    image: withBasePath("/images/product-rice.png"),
     eyebrow: "花東縱谷好米",
     description: "來自花東縱谷的潔淨水源與日夜溫差，米香自然、口感飽滿，適合日常主食。",
     features: ["花東好米", "香氣自然", "口感 Q 彈"],
@@ -54,7 +56,7 @@ export const products: Product[] = [
     name: "牛奶米",
     category: "米糧",
     origin: "台東｜池上",
-    image: "/images/product-rice.png",
+    image: withBasePath("/images/product-rice.png"),
     eyebrow: "柔軟清甜",
     description: "米飯口感溫潤柔軟，適合家庭餐桌與便當料理，冷掉後依然保有細緻口感。",
     features: ["台灣在地米", "口感柔軟", "家庭料理適用"],
@@ -65,7 +67,7 @@ export const products: Product[] = [
     name: "優選蛋黃",
     category: "季節限定",
     origin: "彰化｜優能農產",
-    image: "/images/product-yolk.png",
+    image: withBasePath("/images/product-yolk.png"),
     eyebrow: "節慶限定選品",
     description: "專為端午粽與節慶料理準備的濃郁蛋黃，色澤飽滿、香氣厚實。",
     features: ["端午料理適用", "香氣濃郁", "數量限定"],

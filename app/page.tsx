@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowIcon } from "@/components/ArrowIcon";
 import { LineCTA } from "@/components/LineCTA";
@@ -6,19 +5,17 @@ import { ProductCard } from "@/components/ProductCard";
 import { SectionHeading } from "@/components/SectionHeading";
 import { StoryCard } from "@/components/StoryCard";
 import { articles, products, stories } from "@/data/site";
+import { withBasePath } from "@/lib/site";
 
 export default function Home() {
   return (
     <>
       <section className="page-shell pt-5 sm:pt-7">
         <div className="relative min-h-[680px] overflow-hidden rounded-[2rem] bg-[#d9d5c8] sm:min-h-[720px]">
-          <Image
+          <img
             alt="台灣在地農產主視覺，包含雞蛋、米糧與自然田野風景"
-            className="object-cover object-[58%_center]"
-            fill
-            priority
-            sizes="(max-width: 1240px) 100vw, 1200px"
-            src="/images/hero-farm.png"
+            className="absolute inset-0 h-full w-full object-cover object-[58%_center]"
+            src={withBasePath("/images/hero-farm.png")}
           />
           <div className="absolute inset-0 bg-gradient-to-r from-[#233128]/88 via-[#233128]/48 to-transparent" />
           <div className="relative flex min-h-[680px] max-w-2xl flex-col justify-end px-6 py-12 text-white sm:min-h-[720px] sm:px-12 sm:py-16 lg:px-20">
@@ -118,7 +115,12 @@ export default function Home() {
             </Link>
           </div>
           <div className="relative min-h-96">
-            <Image alt="優能農產蛋品主視覺" className="object-cover" fill sizes="(max-width: 1024px) 100vw, 50vw" src="/images/product-eggs.png" />
+            <img
+              alt="優能農產蛋品主視覺"
+              className="absolute inset-0 h-full w-full object-cover"
+              loading="lazy"
+              src={withBasePath("/images/product-eggs.png")}
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-[#2f4938]/30 to-transparent" />
           </div>
         </div>

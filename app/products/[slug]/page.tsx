@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowIcon } from "@/components/ArrowIcon";
@@ -30,7 +29,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <section className="page-shell section-space">
         <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
           <div className="relative aspect-square overflow-hidden rounded-[2rem] bg-[#eee9dd]">
-            <Image alt={product.name} className="object-cover" fill priority sizes="(max-width: 1024px) 100vw, 50vw" src={product.image} />
+            <img alt={product.name} className="absolute inset-0 h-full w-full object-cover" src={product.image} />
           </div>
           <div className="lg:px-8">
             <p className="eyebrow">
