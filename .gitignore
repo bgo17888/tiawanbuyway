@@ -1,0 +1,6 @@
+.next/
+.pnpm-store/
+.tools/
+node_modules/
+Thumbs.db
+Desktop.ini

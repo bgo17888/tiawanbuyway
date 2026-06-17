@@ -1,0 +1,154 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8f4e9;
+  --foreground: #26382d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: #d8c283;
+  color: #26382d;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.page-shell {
+  width: min(100% - 2.5rem, 1200px);
+  margin-inline: auto;
+}
+
+.section-space {
+  padding-block: clamp(4.5rem, 9vw, 8rem);
+}
+
+.eyebrow {
+  font-size: 0.68rem;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: #9a8350;
+}
+
+.nav-link {
+  position: relative;
+  padding-block: 0.5rem;
+  font-size: 0.83rem;
+  color: #4f5b52;
+  transition: color 180ms ease;
+}
+
+.nav-link::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  content: "";
+  background: #2f4938;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 200ms ease;
+}
+
+.nav-link:hover {
+  color: #26382d;
+}
+
+.nav-link:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 999px;
+  padding: 0.85rem 1.4rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: transform 180ms ease, background 180ms ease, color 180ms ease;
+}
+
+.button:hover {
+  transform: translateY(-2px);
+}
+
+.button-primary {
+  background: #2f4938;
+  color: #fffdf7;
+}
+
+.button-primary:hover {
+  background: #23372a;
+}
+
+.button-outline {
+  border: 1px solid rgb(47 73 56 / 18%);
+  color: #2f4938;
+}
+
+.button-outline:hover {
+  background: rgb(47 73 56 / 6%);
+}
+
+.footer-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: #f0d895;
+}
+
+.form-label {
+  display: grid;
+  gap: 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #4a554d;
+}
+
+.form-input {
+  width: 100%;
+  border: 1px solid rgb(47 73 56 / 14%);
+  border-radius: 0.9rem;
+  background: #faf8f1;
+  padding: 0.9rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: #26382d;
+  outline: none;
+  transition: border 160ms ease, box-shadow 160ms ease;
+}
+
+.form-input:focus {
+  border-color: rgb(47 73 56 / 45%);
+  box-shadow: 0 0 0 3px rgb(47 73 56 / 7%);
+}
+
+.form-input::placeholder {
+  color: #aaa598;
+}
+
+@media (max-width: 640px) {
+  .page-shell {
+    width: min(100% - 2rem, 1200px);
+  }
+}
