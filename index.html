@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>簡易經銷存工具</title>
+  <style>
+    :root {
+      --bg: #f3efe7;
+      --panel: #fffdf8;
+      --ink: #2f2a24;
+      --muted: #766b5d;
+      --line: #dbcdbb;
+      --brand: #17624a;
+      --brand-soft: #d9efe7;
+      --warn: #b74d2d;
+      --shadow: 0 14px 36px rgba(71, 51, 28, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Microsoft JhengHei", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.9), transparent 35%),
+        linear-gradient(180deg, #f8f3ea 0%, var(--bg) 100%);
+      color: var(--ink);
+    }
+
+    .shell {
+      width: min(1160px, calc(100% - 32px));
+      margin: 32px auto 48px;
+    }
+
+    .hero {
+      padding: 28px;
+      border-radius: 24px;
+      background: linear-gradient(135deg, #1f6d53 0%, #2d8b69 100%);
+      color: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: clamp(28px, 4vw, 42px);
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 720px;
+      color: rgba(255, 255, 255, 0.86);
+      line-height: 1.6;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 18px;
+      margin-top: 20px;
+    }
+
+    .card {
+      grid-column: span 12;
+      background: var(--panel);
+      border: 1px solid rgba(219, 205, 187, 0.8);
+      border-radius: 22px;
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .card h2 {
+      margin: 0 0 6px;
+      font-size: 22px;
+    }
+
+    .card p {
+      margin: 0 0 18px;
+      color: var(--muted);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .stat {
+      padding: 16px;
+      border-radius: 18px;
+      background: #f7f2ea;
+      border: 1px solid var(--line);
+    }
+
+    .stat span {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .stat strong {
+      font-size: 28px;
+      letter-spacing: 0.02em;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    form {
+      display: grid;
+      gap: 12px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    input, select, button {
+      font: inherit;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      background: var(--brand);
+      color: #fff;
+      cursor: pointer;
+      transition: transform 0.18s ease, opacity 0.18s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      opacity: 0.94;
+    }
+
+    .subtle-btn {
+      background: #e9dfd2;
+      color: var(--ink);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .search {
+      min-width: min(320px, 100%);
+      flex: 1;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+      background: #fff;
+    }
+
+    th, td {
+      padding: 14px;
+      text-align: left;
+      border-bottom: 1px solid #efe4d6;
+      font-size: 14px;
+    }
+
+    th {
+      background: #faf5ee;
+      color: var(--muted);
+      position: sticky;
+      top: 0;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .in {
+      background: #ddf3e6;
+      color: #17624a;
+    }
+
+    .out {
+      background: #f9dfd5;
+      color: #9f3c1f;
+    }
+
+    .empty {
+      padding: 24px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: -2px;
+    }
+
+    .danger {
+      color: var(--warn);
+      font-size: 13px;
+      min-height: 18px;
+    }
+
+    @media (max-width: 900px) {
+      .stats,
+      .split,
+      .row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <h1>簡易經銷存工具</h1>
+      <p>先用最少步驟把商品、進貨、銷貨、庫存管起來。資料會自動存在這台電腦的瀏覽器裡，打開就能接著用。</p>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h2>即時總覽</h2>
+        <p>快速看目前品項數、庫存、進貨金額與銷貨金額。</p>
+        <div class="stats">
+          <div class="stat">
+            <span>商品數</span>
+            <strong id="productCount">0</strong>
+          </div>
+          <div class="stat">
+            <span>總庫存量</span>
+            <strong id="stockCount">0</strong>
+          </div>
+          <div class="stat">
+            <span>累計進貨</span>
+            <strong id="purchaseTotal">$0</strong>
+          </div>
+          <div class="stat">
+            <span>累計銷貨</span>
+            <strong id="salesTotal">$0</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>快速操作</h2>
+        <p>先建商品，再登記進貨或銷貨。</p>
+        <div class="split">
+          <form id="productForm">
+            <div class="row">
+              <label>
+                商品名稱
+                <input id="productName" type="text" placeholder="例如：A4影印紙" required>
+              </label>
+              <label>
+                單位
+                <input id="productUnit" type="text" placeholder="例如：包、箱、瓶" required>
+              </label>
+            </div>
+            <div class="row">
+              <label>
+                進貨單價
+                <input id="productCost" type="number" min="0" step="1" placeholder="例如：80">
+              </label>
+              <label>
+                銷售單價
+                <input id="productPrice" type="number" min="0" step="1" placeholder="例如：120">
+              </label>
+            </div>
+            <button type="submit">新增商品</button>
+            <div class="hint">建立後就能在進貨與銷貨欄位直接選取。</div>
+          </form>
+
+          <form id="transactionForm">
+            <div class="row">
+              <label>
+                類型
+                <select id="transactionType">
+                  <option value="purchase">進貨</option>
+                  <option value="sale">銷貨</option>
+                </select>
+              </label>
+              <label>
+                商品
+                <select id="transactionProduct" required></select>
+              </label>
+            </div>
+            <div class="row">
+              <label>
+                數量
+                <input id="transactionQty" type="number" min="1" step="1" placeholder="例如：10" required>
+              </label>
+              <label>
+                單價
+                <input id="transactionPrice" type="number" min="0" step="1" placeholder="留空會自動帶入">
+              </label>
+            </div>
+            <button type="submit">登記交易</button>
+            <div id="transactionError" class="danger"></div>
+          </form>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="toolbar">
+          <div>
+            <h2>庫存清單</h2>
+            <p>每個商品目前的庫存與參考單價。</p>
+          </div>
+          <input id="searchInput" class="search" type="text" placeholder="搜尋商品名稱">
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>商品</th>
+                <th>單位</th>
+                <th>目前庫存</th>
+                <th>進貨單價</th>
+                <th>銷售單價</th>
+              </tr>
+            </thead>
+            <tbody id="inventoryBody"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="toolbar">
+          <div>
+            <h2>交易紀錄</h2>
+            <p>保留最近的進銷紀錄，方便快速回看。</p>
+          </div>
+          <button id="clearDataBtn" type="button" class="subtle-btn">清空全部資料</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>時間</th>
+                <th>類型</th>
+                <th>商品</th>
+                <th>數量</th>
+                <th>單價</th>
+                <th>金額</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const storageKey = "simple-inventory-tool-v1";
+    const state = loadState();
+
+    const productForm = document.getElementById("productForm");
+    const transactionForm = document.getElementById("transactionForm");
+    const productName = document.getElementById("productName");
+    const productUnit = document.getElementById("productUnit");
+    const productCost = document.getElementById("productCost");
+    const productPrice = document.getElementById("productPrice");
+    const transactionType = document.getElementById("transactionType");
+    const transactionProduct = document.getElementById("transactionProduct");
+    const transactionQty = document.getElementById("transactionQty");
+    const transactionPrice = document.getElementById("transactionPrice");
+    const transactionError = document.getElementById("transactionError");
+    const searchInput = document.getElementById("searchInput");
+    const clearDataBtn = document.getElementById("clearDataBtn");
+
+    productForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const name = productName.value.trim();
+      const unit = productUnit.value.trim();
+      const cost = Number(productCost.value || 0);
+      const price = Number(productPrice.value || 0);
+
+      if (!name || !unit) {
+        return;
+      }
+
+      state.products.unshift({
+        id: crypto.randomUUID(),
+        name,
+        unit,
+        cost,
+        price
+      });
+
+      productForm.reset();
+      persistAndRender();
+    });
+
+    transactionForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      transactionError.textContent = "";
+
+      const productId = transactionProduct.value;
+      const type = transactionType.value;
+      const qty = Number(transactionQty.value);
+      const product = state.products.find((item) => item.id === productId);
+
+      if (!product || !qty) {
+        return;
+      }
+
+      const unitPrice = Number(transactionPrice.value || (type === "purchase" ? product.cost : product.price) || 0);
+      const currentStock = getStockByProductId(productId);
+
+      if (type === "sale" && qty > currentStock) {
+        transactionError.textContent = "銷貨數量超過目前庫存，請先確認數量。";
+        return;
+      }
+
+      state.transactions.unshift({
+        id: crypto.randomUUID(),
+        productId,
+        type,
+        qty,
+        unitPrice,
+        createdAt: new Date().toISOString()
+      });
+
+      transactionForm.reset();
+      transactionType.value = "purchase";
+      fillProductOptions();
+      persistAndRender();
+    });
+
+    transactionType.addEventListener("change", autofillTransactionPrice);
+    transactionProduct.addEventListener("change", autofillTransactionPrice);
+    searchInput.addEventListener("input", renderInventoryTable);
+
+    clearDataBtn.addEventListener("click", () => {
+      const confirmed = window.confirm("要清空全部商品與交易資料嗎？");
+      if (!confirmed) {
+        return;
+      }
+
+      state.products = [];
+      state.transactions = [];
+      persistAndRender();
+    });
+
+    function loadState() {
+      const saved = localStorage.getItem(storageKey);
+      if (!saved) {
+        return { products: [], transactions: [] };
+      }
+
+      try {
+        const parsed = JSON.parse(saved);
+        return {
+          products: Array.isArray(parsed.products) ? parsed.products : [],
+          transactions: Array.isArray(parsed.transactions) ? parsed.transactions : []
+        };
+      } catch {
+        return { products: [], transactions: [] };
+      }
+    }
+
+    function persistAndRender() {
+      localStorage.setItem(storageKey, JSON.stringify(state));
+      fillProductOptions();
+      renderSummary();
+      renderInventoryTable();
+      renderHistoryTable();
+    }
+
+    function fillProductOptions() {
+      const currentValue = transactionProduct.value;
+      transactionProduct.innerHTML = "";
+
+      if (state.products.length === 0) {
+        const option = document.createElement("option");
+        option.textContent = "請先新增商品";
+        option.value = "";
+        transactionProduct.appendChild(option);
+        transactionProduct.disabled = true;
+      } else {
+        transactionProduct.disabled = false;
+        state.products.forEach((product) => {
+          const option = document.createElement("option");
+          option.value = product.id;
+          option.textContent = `${product.name} (${product.unit})`;
+          transactionProduct.appendChild(option);
+        });
+
+        const stillExists = state.products.some((product) => product.id === currentValue);
+        transactionProduct.value = stillExists ? currentValue : state.products[0].id;
+      }
+
+      autofillTransactionPrice();
+    }
+
+    function autofillTransactionPrice() {
+      const product = state.products.find((item) => item.id === transactionProduct.value);
+      if (!product) {
+        transactionPrice.value = "";
+        return;
+      }
+
+      transactionPrice.value = transactionType.value === "purchase" ? product.cost || "" : product.price || "";
+    }
+
+    function getStockByProductId(productId) {
+      return state.transactions.reduce((stock, item) => {
+        if (item.productId !== productId) {
+          return stock;
+        }
+        return item.type === "purchase" ? stock + item.qty : stock - item.qty;
+      }, 0);
+    }
+
+    function renderSummary() {
+      const purchaseTotal = state.transactions
+        .filter((item) => item.type === "purchase")
+        .reduce((sum, item) => sum + item.qty * item.unitPrice, 0);
+
+      const salesTotal = state.transactions
+        .filter((item) => item.type === "sale")
+        .reduce((sum, item) => sum + item.qty * item.unitPrice, 0);
+
+      const stockCount = state.products.reduce((sum, product) => sum + getStockByProductId(product.id), 0);
+
+      document.getElementById("productCount").textContent = state.products.length;
+      document.getElementById("stockCount").textContent = stockCount;
+      document.getElementById("purchaseTotal").textContent = money(purchaseTotal);
+      document.getElementById("salesTotal").textContent = money(salesTotal);
+    }
+
+    function renderInventoryTable() {
+      const tbody = document.getElementById("inventoryBody");
+      const keyword = searchInput.value.trim().toLowerCase();
+      const rows = state.products.filter((product) => product.name.toLowerCase().includes(keyword));
+
+      if (rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="empty">還沒有符合的商品資料</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = rows.map((product) => `
+        <tr>
+          <td>${escapeHtml(product.name)}</td>
+          <td>${escapeHtml(product.unit)}</td>
+          <td>${getStockByProductId(product.id)}</td>
+          <td>${money(product.cost)}</td>
+          <td>${money(product.price)}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderHistoryTable() {
+      const tbody = document.getElementById("historyBody");
+
+      if (state.transactions.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="empty">還沒有交易紀錄</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = state.transactions.slice(0, 30).map((item) => {
+        const product = state.products.find((entry) => entry.id === item.productId);
+        return `
+          <tr>
+            <td>${formatTime(item.createdAt)}</td>
+            <td><span class="pill ${item.type === "purchase" ? "in" : "out"}">${item.type === "purchase" ? "進貨" : "銷貨"}</span></td>
+            <td>${escapeHtml(product ? product.name : "已刪除商品")}</td>
+            <td>${item.qty}</td>
+            <td>${money(item.unitPrice)}</td>
+            <td>${money(item.qty * item.unitPrice)}</td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function formatTime(isoString) {
+      return new Date(isoString).toLocaleString("zh-TW", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function money(value) {
+      return new Intl.NumberFormat("zh-TW", {
+        style: "currency",
+        currency: "TWD",
+        maximumFractionDigits: 0
+      }).format(value || 0);
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    persistAndRender();
+  </script>
+</body>
+</html>
