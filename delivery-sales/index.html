@@ -362,6 +362,20 @@
       white-space: nowrap;
     }
 
+    .header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .backup-note {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
     .print-sheet {
       display: none;
     }
@@ -572,13 +586,19 @@
           <h2>今日送貨清單</h2>
           <p id="list-subtitle">只顯示選定日期的單據</p>
         </div>
-        <button type="button" class="print-button" id="print-button">列印／PDF</button>
+        <div class="header-actions">
+          <button type="button" class="print-button" id="backup-button">備份資料</button>
+          <button type="button" class="print-button" id="restore-button">還原資料</button>
+          <button type="button" class="print-button" id="print-button">列印／PDF</button>
+        </div>
       </div>
       <div class="list" id="order-list"></div>
+      <p class="backup-note">備份檔請留在手機、雲端硬碟或傳給自己；刪除單據、清除瀏覽器資料或換手機前，請先備份。</p>
     </section>
   </main>
 
   <section class="print-sheet" id="print-sheet" aria-hidden="true"></section>
+  <input id="restore-file" type="file" accept="application/json,.json" hidden>
 
   <script>
     const STORAGE_KEY = "simple-delivery-sales-v1";
@@ -596,6 +616,9 @@
     const resetButton = document.getElementById("reset-form");
     const printButton = document.getElementById("print-button");
     const printSheet = document.getElementById("print-sheet");
+    const backupButton = document.getElementById("backup-button");
+    const restoreButton = document.getElementById("restore-button");
+    const restoreFile = document.getElementById("restore-file");
     const previewTargets = {
       sale: document.getElementById("saleTotalPreview"),
       cost: document.getElementById("costTotalPreview"),
@@ -870,6 +893,51 @@
       `;
     }
 
+    function backupOrders() {
+      const backup = {
+        app: "簡易送貨銷貨系統",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        orders: state.orders
+      };
+      const file = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(file);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `送貨銷貨備份-${todayString}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function restoreOrders(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const backup = JSON.parse(reader.result);
+          if (!Array.isArray(backup.orders)) {
+            throw new Error("格式不正確");
+          }
+
+          const restoredOrders = backup.orders.map((order) => createOrder(order));
+          if (!window.confirm(`確定還原 ${restoredOrders.length} 筆單據嗎？目前手機上的資料會被取代。`)) {
+            return;
+          }
+
+          state.orders = restoredOrders;
+          saveOrders();
+          render();
+          window.alert("資料已還原完成。");
+        } catch (error) {
+          window.alert("無法讀取備份檔，請確認選擇的是本系統匯出的備份檔。");
+        } finally {
+          restoreFile.value = "";
+        }
+      };
+      reader.readAsText(file);
+    }
+
     function render() {
       const currentDateOrders = state.orders.filter((order) => order.date === fields.date.value);
       renderSummary(currentDateOrders);
@@ -940,6 +1008,14 @@
     fields.date.addEventListener("change", render);
     resetButton.addEventListener("click", resetForm);
     printButton.addEventListener("click", () => window.print());
+    backupButton.addEventListener("click", backupOrders);
+    restoreButton.addEventListener("click", () => restoreFile.click());
+    restoreFile.addEventListener("change", () => {
+      const [file] = restoreFile.files;
+      if (file) {
+        restoreOrders(file);
+      }
+    });
 
     orderList.addEventListener("click", (event) => {
       const action = event.target.dataset.action;
