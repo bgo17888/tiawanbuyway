@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>簡易送貨銷貨系統</title>
+  <style>
+    :root {
+      --bg: #f7f3ea;
+      --panel: #fffdf8;
+      --card: #fffaf1;
+      --ink: #2f241b;
+      --muted: #7b6959;
+      --line: #e7d8c7;
+      --accent: #c96f2d;
+      --accent-strong: #9f4f17;
+      --good: #2f7a4d;
+      --warn: #d28a18;
+      --soft: #f1e0c8;
+      --danger: #b9533f;
+      --shadow: 0 14px 34px rgba(77, 45, 20, 0.12);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(201, 111, 45, 0.16), transparent 32%),
+        linear-gradient(180deg, #fbf8f2 0%, var(--bg) 100%);
+      color: var(--ink);
+    }
+
+    .app {
+      width: min(100%, 560px);
+      margin: 0 auto;
+      padding: 16px 14px 28px;
+    }
+
+    .hero {
+      padding: 10px 4px 18px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(201, 111, 45, 0.12);
+      color: var(--accent-strong);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    h1 {
+      margin: 14px 0 8px;
+      font-size: 28px;
+      line-height: 1.2;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid rgba(123, 105, 89, 0.12);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      padding: 12px;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      padding: 14px;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #fff9ef 0%, #fff4e5 100%);
+      border: 1px solid rgba(201, 111, 45, 0.14);
+    }
+
+    .metric small {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 24px;
+      line-height: 1.1;
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .section {
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .section-header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .section-header p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    form {
+      display: grid;
+      gap: 12px;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 14px;
+      padding: 12px 13px;
+      font: inherit;
+      color: var(--ink);
+    }
+
+    .field input:focus,
+    .field select:focus {
+      outline: 2px solid rgba(201, 111, 45, 0.2);
+      border-color: var(--accent);
+    }
+
+    .calc-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      padding: 10px;
+      background: var(--card);
+      border-radius: 16px;
+      border: 1px solid rgba(201, 111, 45, 0.12);
+    }
+
+    .calc-box {
+      padding: 10px;
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .calc-box small {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      margin-bottom: 5px;
+    }
+
+    .calc-box strong {
+      font-size: 17px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      appearance: none;
+      border: none;
+      border-radius: 14px;
+      padding: 13px 16px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .primary {
+      flex: 1;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+      color: #fff;
+      box-shadow: 0 12px 20px rgba(159, 79, 23, 0.24);
+    }
+
+    .secondary {
+      background: #efe4d2;
+      color: var(--ink);
+    }
+
+    .list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .empty {
+      padding: 18px;
+      text-align: center;
+      color: var(--muted);
+      background: #fff8ee;
+      border-radius: 16px;
+      border: 1px dashed var(--line);
+    }
+
+    .order-card {
+      padding: 14px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #fffdfa 0%, #fff8ef 100%);
+      border: 1px solid rgba(123, 105, 89, 0.12);
+    }
+
+    .order-top,
+    .order-meta,
+    .order-figures,
+    .order-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .order-top {
+      margin-bottom: 10px;
+    }
+
+    .order-title strong {
+      display: block;
+      font-size: 18px;
+    }
+
+    .order-title span,
+    .order-meta,
+    .order-figures small {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 78px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .status-pending { background: #f1ede7; color: #6c5a4b; }
+    .status-shipping { background: #fff0ce; color: #8a5b00; }
+    .status-done { background: #dff2e4; color: #1f6a3c; }
+    .payment-unpaid { background: #fde4de; color: var(--danger); }
+    .payment-paid { background: #e2f3df; color: var(--good); }
+
+    .order-meta {
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .order-figures {
+      align-items: stretch;
+      margin-bottom: 12px;
+    }
+
+    .figure {
+      flex: 1;
+      padding: 10px;
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .figure strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 16px;
+    }
+
+    .order-actions {
+      align-items: stretch;
+    }
+
+    .action-group {
+      flex: 1;
+      display: grid;
+      gap: 8px;
+    }
+
+    .chip {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #fff;
+      border: 1px solid var(--line);
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    .chip.active {
+      border-color: transparent;
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+    }
+
+    .danger-link {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: transparent;
+      border: 1px dashed rgba(185, 83, 63, 0.35);
+      color: var(--danger);
+      font-size: 13px;
+    }
+
+    .print-button {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #efe4d2;
+      color: var(--ink);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .print-sheet {
+      display: none;
+    }
+
+    @media print {
+      @page {
+        size: A4;
+        margin: 14mm;
+      }
+
+      body {
+        background: #fff;
+        color: #1f1f1f;
+        font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      }
+
+      .app {
+        display: none;
+      }
+
+      .print-sheet {
+        display: block;
+      }
+
+      .print-sheet h1 {
+        margin: 0 0 5px;
+        font-size: 24px;
+      }
+
+      .print-subtitle {
+        margin: 0 0 18px;
+        color: #555;
+        font-size: 13px;
+      }
+
+      .print-summary {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin-bottom: 18px;
+      }
+
+      .print-summary div {
+        padding: 10px;
+        border: 1px solid #bbb;
+        border-radius: 6px;
+      }
+
+      .print-summary small,
+      .print-summary strong {
+        display: block;
+      }
+
+      .print-summary small {
+        color: #555;
+        font-size: 11px;
+      }
+
+      .print-summary strong {
+        margin-top: 5px;
+        font-size: 16px;
+      }
+
+      .print-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 11px;
+      }
+
+      .print-table th,
+      .print-table td {
+        padding: 8px 6px;
+        border: 1px solid #aaa;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .print-table th {
+        background: #eee;
+      }
+
+      .print-table .number {
+        text-align: right;
+      }
+
+      .print-empty {
+        padding: 18px;
+        border: 1px dashed #999;
+        text-align: center;
+        color: #555;
+      }
+    }
+
+    @media (min-width: 700px) {
+      .app {
+        padding-top: 28px;
+      }
+
+      .summary {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="hero">
+      <div class="eyebrow">手機優先 第一版</div>
+      <h1>簡易送貨銷貨系統</h1>
+      <p>只保留送貨途中最需要的欄位，今天的數量、銷售、成本與毛利直接顯示。</p>
+    </section>
+
+    <section class="panel summary" id="summary"></section>
+
+    <section class="panel section">
+      <div class="section-header">
+        <div>
+          <h2>新增送貨單</h2>
+          <p>快速輸入後直接加入今天清單</p>
+        </div>
+      </div>
+
+      <form id="order-form">
+        <div class="field-grid">
+          <div class="field full">
+            <label for="date">日期</label>
+            <input id="date" name="date" type="date" required>
+          </div>
+
+          <div class="field full">
+            <label for="customer">客戶</label>
+            <input id="customer" name="customer" type="text" placeholder="例如：幸福早餐店" required>
+          </div>
+
+          <div class="field full">
+            <label for="product">商品</label>
+            <input id="product" name="product" type="text" placeholder="例如：優能放牧蛋" required>
+          </div>
+
+          <div class="field">
+            <label for="quantity">數量</label>
+            <input id="quantity" name="quantity" type="number" min="0" step="0.01" value="1" required>
+          </div>
+
+          <div class="field">
+            <label for="unit">單位</label>
+            <input id="unit" name="unit" type="text" value="箱" required>
+          </div>
+
+          <div class="field">
+            <label for="salePrice">銷售單價</label>
+            <input id="salePrice" name="salePrice" type="number" min="0" step="0.01" value="0" required>
+          </div>
+
+          <div class="field">
+            <label for="costPrice">成本單價</label>
+            <input id="costPrice" name="costPrice" type="number" min="0" step="0.01" value="0" required>
+          </div>
+
+          <div class="field">
+            <label for="deliveryStatus">送貨狀態</label>
+            <select id="deliveryStatus" name="deliveryStatus">
+              <option value="未送">未送</option>
+              <option value="配送中">配送中</option>
+              <option value="已送">已送</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="paymentStatus">收款狀態</label>
+            <select id="paymentStatus" name="paymentStatus">
+              <option value="未收">未收</option>
+              <option value="已收">已收</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="calc-strip">
+          <div class="calc-box">
+            <small>銷售額</small>
+            <strong id="saleTotalPreview">$0</strong>
+          </div>
+          <div class="calc-box">
+            <small>總成本</small>
+            <strong id="costTotalPreview">$0</strong>
+          </div>
+          <div class="calc-box">
+            <small>毛利</small>
+            <strong id="profitPreview">$0</strong>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="primary">加入清單</button>
+          <button type="button" class="secondary" id="reset-form">清空</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel section">
+      <div class="section-header">
+        <div>
+          <h2>今日送貨清單</h2>
+          <p id="list-subtitle">只顯示選定日期的單據</p>
+        </div>
+        <button type="button" class="print-button" id="print-button">列印／PDF</button>
+      </div>
+      <div class="list" id="order-list"></div>
+    </section>
+  </main>
+
+  <section class="print-sheet" id="print-sheet" aria-hidden="true"></section>
+
+  <script>
+    const STORAGE_KEY = "simple-delivery-sales-v1";
+    const today = new Date();
+    const todayString = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, "0"),
+      String(today.getDate()).padStart(2, "0")
+    ].join("-");
+
+    const form = document.getElementById("order-form");
+    const summary = document.getElementById("summary");
+    const orderList = document.getElementById("order-list");
+    const listSubtitle = document.getElementById("list-subtitle");
+    const resetButton = document.getElementById("reset-form");
+    const printButton = document.getElementById("print-button");
+    const printSheet = document.getElementById("print-sheet");
+    const previewTargets = {
+      sale: document.getElementById("saleTotalPreview"),
+      cost: document.getElementById("costTotalPreview"),
+      profit: document.getElementById("profitPreview")
+    };
+
+    const fields = {
+      date: document.getElementById("date"),
+      customer: document.getElementById("customer"),
+      product: document.getElementById("product"),
+      quantity: document.getElementById("quantity"),
+      unit: document.getElementById("unit"),
+      salePrice: document.getElementById("salePrice"),
+      costPrice: document.getElementById("costPrice"),
+      deliveryStatus: document.getElementById("deliveryStatus"),
+      paymentStatus: document.getElementById("paymentStatus")
+    };
+
+    const deliveryCycle = ["未送", "配送中", "已送"];
+    const paymentCycle = ["未收", "已收"];
+
+    function loadOrders() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : seedOrders();
+      } catch (error) {
+        return seedOrders();
+      }
+    }
+
+    function seedOrders() {
+      const initial = [
+        createOrder({
+          date: todayString,
+          customer: "幸福早餐店",
+          product: "優能放牧蛋",
+          quantity: 5,
+          unit: "箱",
+          salePrice: 1200,
+          costPrice: 950,
+          deliveryStatus: "配送中",
+          paymentStatus: "未收"
+        }),
+        createOrder({
+          date: todayString,
+          customer: "小南餐廳",
+          product: "雞蛋",
+          quantity: 3,
+          unit: "箱",
+          salePrice: 1050,
+          costPrice: 850,
+          deliveryStatus: "未送",
+          paymentStatus: "已收"
+        })
+      ];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+      return initial;
+    }
+
+    function saveOrders() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.orders));
+    }
+
+    function number(value) {
+      return Number.parseFloat(value) || 0;
+    }
+
+    function currency(value) {
+      return new Intl.NumberFormat("zh-TW", {
+        style: "currency",
+        currency: "TWD",
+        maximumFractionDigits: 0
+      }).format(value);
+    }
+
+    function quantityText(value) {
+      const whole = Number.isInteger(value);
+      return whole ? String(value) : value.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+    }
+
+    function calculateTotals(quantity, salePrice, costPrice) {
+      const saleTotal = quantity * salePrice;
+      const costTotal = quantity * costPrice;
+      const profit = saleTotal - costTotal;
+      return { saleTotal, costTotal, profit };
+    }
+
+    function createOrder(data) {
+      const quantity = number(data.quantity);
+      const salePrice = number(data.salePrice);
+      const costPrice = number(data.costPrice);
+      const totals = calculateTotals(quantity, salePrice, costPrice);
+
+      return {
+        id: data.id || `order-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+        date: data.date,
+        customer: data.customer.trim(),
+        product: data.product.trim(),
+        quantity,
+        unit: data.unit.trim(),
+        salePrice,
+        costPrice,
+        deliveryStatus: data.deliveryStatus,
+        paymentStatus: data.paymentStatus,
+        ...totals
+      };
+    }
+
+    function getDeliveryClass(status) {
+      return status === "已送"
+        ? "status-done"
+        : status === "配送中"
+          ? "status-shipping"
+          : "status-pending";
+    }
+
+    function getPaymentClass(status) {
+      return status === "已收" ? "payment-paid" : "payment-unpaid";
+    }
+
+    function cycleValue(current, choices) {
+      const currentIndex = choices.indexOf(current);
+      const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % choices.length;
+      return choices[nextIndex];
+    }
+
+    function getTotals(orders) {
+      return orders.reduce((acc, order) => {
+        acc.quantity += order.quantity;
+        acc.sale += order.saleTotal;
+        acc.cost += order.costTotal;
+        acc.profit += order.profit;
+        return acc;
+      }, { quantity: 0, sale: 0, cost: 0, profit: 0 });
+    }
+
+    function renderSummary(currentDateOrders) {
+      const totals = getTotals(currentDateOrders);
+
+      summary.innerHTML = `
+        <article class="metric">
+          <small>今日送貨總數量</small>
+          <strong>${quantityText(totals.quantity)}</strong>
+          <span>單位依各單據顯示</span>
+        </article>
+        <article class="metric">
+          <small>今日銷售額</small>
+          <strong>${currency(totals.sale)}</strong>
+          <span>自動加總</span>
+        </article>
+        <article class="metric">
+          <small>今日成本</small>
+          <strong>${currency(totals.cost)}</strong>
+          <span>自動加總</span>
+        </article>
+        <article class="metric">
+          <small>今日毛利</small>
+          <strong>${currency(totals.profit)}</strong>
+          <span>銷售額 - 總成本</span>
+        </article>
+      `;
+    }
+
+    function renderOrders(currentDateOrders) {
+      listSubtitle.textContent = `${fields.date.value} 的單據，共 ${currentDateOrders.length} 筆`;
+
+      if (currentDateOrders.length === 0) {
+        orderList.innerHTML = '<div class="empty">這一天還沒有送貨單，先用上方表單新增第一筆。</div>';
+        return;
+      }
+
+      orderList.innerHTML = currentDateOrders
+        .sort((a, b) => b.id.localeCompare(a.id))
+        .map((order) => `
+          <article class="order-card" data-id="${order.id}">
+            <div class="order-top">
+              <div class="order-title">
+                <strong>${order.customer}</strong>
+                <span>${order.product}</span>
+              </div>
+              <span class="badge ${getDeliveryClass(order.deliveryStatus)}">${order.deliveryStatus}</span>
+            </div>
+
+            <div class="order-meta">
+              <span>${order.date}</span>
+              <span>${quantityText(order.quantity)} ${order.unit}</span>
+              <span>售價 ${currency(order.salePrice)}</span>
+              <span>成本 ${currency(order.costPrice)}</span>
+            </div>
+
+            <div class="order-figures">
+              <div class="figure">
+                <small>銷售額</small>
+                <strong>${currency(order.saleTotal)}</strong>
+              </div>
+              <div class="figure">
+                <small>總成本</small>
+                <strong>${currency(order.costTotal)}</strong>
+              </div>
+              <div class="figure">
+                <small>毛利</small>
+                <strong>${currency(order.profit)}</strong>
+              </div>
+            </div>
+
+            <div class="order-actions">
+              <div class="action-group">
+                <button class="chip" data-action="delivery">切換送貨狀態</button>
+                <span class="badge ${getPaymentClass(order.paymentStatus)}">${order.paymentStatus}</span>
+              </div>
+              <div class="action-group">
+                <button class="chip" data-action="payment">切換收款狀態</button>
+                <button class="danger-link" data-action="delete">刪除</button>
+              </div>
+            </div>
+          </article>
+        `)
+        .join("");
+    }
+
+    function updatePreview() {
+      const quantity = number(fields.quantity.value);
+      const salePrice = number(fields.salePrice.value);
+      const costPrice = number(fields.costPrice.value);
+      const totals = calculateTotals(quantity, salePrice, costPrice);
+
+      previewTargets.sale.textContent = currency(totals.saleTotal);
+      previewTargets.cost.textContent = currency(totals.costTotal);
+      previewTargets.profit.textContent = currency(totals.profit);
+    }
+
+    function renderPrintSheet(currentDateOrders) {
+      const totals = getTotals(currentDateOrders);
+      const rows = currentDateOrders
+        .slice()
+        .sort((a, b) => a.customer.localeCompare(b.customer, "zh-Hant"))
+        .map((order) => `
+          <tr>
+            <td>${order.customer}</td>
+            <td>${order.product}</td>
+            <td class="number">${quantityText(order.quantity)} ${order.unit}</td>
+            <td class="number">${currency(order.salePrice)}</td>
+            <td class="number">${currency(order.costPrice)}</td>
+            <td class="number">${currency(order.saleTotal)}</td>
+            <td class="number">${currency(order.costTotal)}</td>
+            <td class="number">${currency(order.profit)}</td>
+            <td>${order.deliveryStatus}</td>
+            <td>${order.paymentStatus}</td>
+          </tr>
+        `)
+        .join("");
+
+      printSheet.innerHTML = `
+        <h1>送貨銷貨單</h1>
+        <p class="print-subtitle">日期：${fields.date.value}　｜　列印時間：${new Date().toLocaleString("zh-TW", { hour12: false })}</p>
+        <div class="print-summary">
+          <div><small>送貨總數量</small><strong>${quantityText(totals.quantity)}</strong></div>
+          <div><small>銷售額</small><strong>${currency(totals.sale)}</strong></div>
+          <div><small>總成本</small><strong>${currency(totals.cost)}</strong></div>
+          <div><small>毛利</small><strong>${currency(totals.profit)}</strong></div>
+        </div>
+        ${currentDateOrders.length === 0 ? '<p class="print-empty">這一天沒有送貨單。</p>' : `
+          <table class="print-table">
+            <thead>
+              <tr>
+                <th>客戶</th><th>商品</th><th>數量</th><th>售價</th><th>成本</th><th>銷售額</th><th>總成本</th><th>毛利</th><th>送貨</th><th>收款</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        `}
+      `;
+    }
+
+    function render() {
+      const currentDateOrders = state.orders.filter((order) => order.date === fields.date.value);
+      renderSummary(currentDateOrders);
+      renderOrders(currentDateOrders);
+      renderPrintSheet(currentDateOrders);
+      updatePreview();
+    }
+
+    function resetForm() {
+      form.reset();
+      fields.date.value = todayString;
+      fields.quantity.value = 1;
+      fields.unit.value = "箱";
+      fields.salePrice.value = 0;
+      fields.costPrice.value = 0;
+      fields.deliveryStatus.value = "未送";
+      fields.paymentStatus.value = "未收";
+      updatePreview();
+      fields.customer.focus();
+    }
+
+    function upsertOrder(orderId, updater) {
+      state.orders = state.orders.map((order) => {
+        if (order.id !== orderId) {
+          return order;
+        }
+
+        const updated = updater(order);
+        return createOrder({ ...order, ...updated, id: order.id });
+      });
+
+      saveOrders();
+      render();
+    }
+
+    const state = {
+      orders: loadOrders()
+    };
+
+    fields.date.value = todayString;
+    updatePreview();
+    render();
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const order = createOrder({
+        date: fields.date.value,
+        customer: fields.customer.value,
+        product: fields.product.value,
+        quantity: fields.quantity.value,
+        unit: fields.unit.value,
+        salePrice: fields.salePrice.value,
+        costPrice: fields.costPrice.value,
+        deliveryStatus: fields.deliveryStatus.value,
+        paymentStatus: fields.paymentStatus.value
+      });
+
+      state.orders.unshift(order);
+      saveOrders();
+      render();
+      resetForm();
+    });
+
+    [fields.quantity, fields.salePrice, fields.costPrice].forEach((field) => {
+      field.addEventListener("input", updatePreview);
+    });
+
+    fields.date.addEventListener("change", render);
+    resetButton.addEventListener("click", resetForm);
+    printButton.addEventListener("click", () => window.print());
+
+    orderList.addEventListener("click", (event) => {
+      const action = event.target.dataset.action;
+      if (!action) {
+        return;
+      }
+
+      const card = event.target.closest(".order-card");
+      const orderId = card?.dataset.id;
+      if (!orderId) {
+        return;
+      }
+
+      if (action === "delivery") {
+        upsertOrder(orderId, (order) => ({
+          deliveryStatus: cycleValue(order.deliveryStatus, deliveryCycle)
+        }));
+        return;
+      }
+
+      if (action === "payment") {
+        upsertOrder(orderId, (order) => ({
+          paymentStatus: cycleValue(order.paymentStatus, paymentCycle)
+        }));
+        return;
+      }
+
+      if (action === "delete") {
+        state.orders = state.orders.filter((order) => order.id !== orderId);
+        saveOrders();
+        render();
+      }
+    });
+  </script>
+</body>
+</html>
