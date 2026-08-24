@@ -78,6 +78,79 @@
       box-shadow: var(--shadow);
     }
 
+    .cloud-panel {
+      padding: 14px 16px;
+      margin-bottom: 14px;
+    }
+
+    .cloud-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .cloud-title {
+      margin: 0;
+      font-size: 15px;
+    }
+
+    .cloud-status {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .cloud-form {
+      display: grid;
+      gap: 9px;
+      margin-top: 12px;
+    }
+
+    .cloud-form input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 11px 12px;
+      font: inherit;
+    }
+
+    .cloud-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .cloud-actions button,
+    .cloud-logout {
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+    }
+
+    .cloud-login {
+      color: #fff;
+      background: var(--good);
+    }
+
+    .cloud-signup {
+      color: var(--ink);
+      background: #e9f1e8;
+    }
+
+    .cloud-logout {
+      color: var(--danger);
+      background: #fff4f1;
+      border: 1px solid rgba(185, 83, 63, 0.25);
+    }
+
+    .cloud-help {
+      margin: 9px 0 0;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
     .summary {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -500,6 +573,25 @@
 
     <section class="panel summary" id="summary"></section>
 
+    <section class="panel cloud-panel" id="cloud-panel">
+      <div class="cloud-top">
+        <div>
+          <h2 class="cloud-title">雲端同步</h2>
+          <p class="cloud-status" id="cloud-status">尚未登入，資料目前只存於這台裝置。</p>
+        </div>
+        <button type="button" class="cloud-logout" id="cloud-logout" hidden>登出</button>
+      </div>
+      <form class="cloud-form" id="cloud-form">
+        <input id="cloud-email" type="email" autocomplete="email" placeholder="登入 Email" required>
+        <input id="cloud-password" type="password" autocomplete="current-password" minlength="6" placeholder="密碼（至少 6 位）" required>
+        <div class="cloud-actions">
+          <button type="submit" class="cloud-login">登入同步</button>
+          <button type="button" class="cloud-signup" id="cloud-signup">首次註冊</button>
+        </div>
+      </form>
+      <p class="cloud-help" id="cloud-help">首次使用請註冊；收到確認信後再登入。登入後，這台裝置的單據會與雲端同步。</p>
+    </section>
+
     <section class="panel section">
       <div class="section-header">
         <div>
@@ -612,8 +704,12 @@
   <section class="print-sheet" id="print-sheet" aria-hidden="true"></section>
   <input id="restore-file" type="file" accept="application/json,.json" hidden>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     const STORAGE_KEY = "simple-delivery-sales-v1";
+    const SUPABASE_URL = "https://ywwlxrntyaxvywzxkojl.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_ztw98B8txsE4y1HPlyRpIA_5JXK0aNE";
+    const cloud = window.supabase?.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
     const today = new Date();
     const todayString = [
       today.getFullYear(),
@@ -636,6 +732,13 @@
     const backupButton = document.getElementById("backup-button");
     const restoreButton = document.getElementById("restore-button");
     const restoreFile = document.getElementById("restore-file");
+    const cloudForm = document.getElementById("cloud-form");
+    const cloudEmail = document.getElementById("cloud-email");
+    const cloudPassword = document.getElementById("cloud-password");
+    const cloudStatus = document.getElementById("cloud-status");
+    const cloudHelp = document.getElementById("cloud-help");
+    const cloudSignup = document.getElementById("cloud-signup");
+    const cloudLogout = document.getElementById("cloud-logout");
     const previewTargets = {
       sale: document.getElementById("saleTotalPreview"),
       cost: document.getElementById("costTotalPreview"),
@@ -697,6 +800,124 @@
 
     function saveOrders() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state.orders));
+    }
+
+    function setCloudStatus(message) {
+      cloudStatus.textContent = message;
+    }
+
+    function cloudOrder(order) {
+      return {
+        id: order.id,
+        owner_id: state.cloudUser.id,
+        delivery_date: order.date,
+        customer: order.customer,
+        product: order.product,
+        quantity: order.quantity,
+        unit: order.unit,
+        sale_price: order.salePrice,
+        cost_price: order.costPrice,
+        delivery_status: order.deliveryStatus,
+        payment_status: order.paymentStatus,
+        updated_at: new Date().toISOString()
+      };
+    }
+
+    function localOrder(row) {
+      return createOrder({
+        id: row.id,
+        date: row.delivery_date,
+        customer: row.customer,
+        product: row.product,
+        quantity: row.quantity,
+        unit: row.unit,
+        salePrice: row.sale_price,
+        costPrice: row.cost_price,
+        deliveryStatus: row.delivery_status,
+        paymentStatus: row.payment_status
+      });
+    }
+
+    async function syncOrder(order) {
+      if (!cloud || !state.cloudUser) {
+        return;
+      }
+
+      setCloudStatus("正在同步雲端資料...");
+      const { error } = await cloud.from("delivery_orders").upsert(cloudOrder(order));
+      setCloudStatus(error ? "同步失敗，資料仍保留在這台裝置。" : `已同步：${state.cloudUser.email}`);
+    }
+
+    async function deleteCloudOrder(orderId) {
+      if (!cloud || !state.cloudUser) {
+        return;
+      }
+
+      const { error } = await cloud.from("delivery_orders").delete().eq("id", orderId);
+      if (error) {
+        setCloudStatus("雲端刪除失敗，請重新整理後再試。");
+      }
+    }
+
+    async function replaceCloudOrders(orders) {
+      if (!cloud || !state.cloudUser) {
+        return;
+      }
+
+      setCloudStatus("正在還原並同步雲端資料...");
+      const { error: deleteError } = await cloud.from("delivery_orders").delete().eq("owner_id", state.cloudUser.id);
+      const { error: insertError } = deleteError || orders.length === 0
+        ? { error: deleteError }
+        : await cloud.from("delivery_orders").upsert(orders.map(cloudOrder));
+      setCloudStatus(insertError ? "雲端還原失敗，請保留備份檔後再試。" : `已同步：${state.cloudUser.email}`);
+    }
+
+    async function loadCloudOrders() {
+      if (!cloud || !state.cloudUser) {
+        return;
+      }
+
+      setCloudStatus("正在讀取雲端資料...");
+      const { data, error } = await cloud.from("delivery_orders").select("*").order("updated_at", { ascending: false });
+      if (error) {
+        setCloudStatus("無法讀取雲端資料，請稍後再試。");
+        return;
+      }
+
+      if (data.length > 0) {
+        state.orders = data.map(localOrder);
+        saveOrders();
+        render();
+      } else if (state.orders.length > 0) {
+        await replaceCloudOrders(state.orders);
+      }
+      setCloudStatus(`已同步：${state.cloudUser.email}`);
+    }
+
+    function renderCloudAccount() {
+      const signedIn = Boolean(state.cloudUser);
+      cloudForm.hidden = signedIn;
+      cloudLogout.hidden = !signedIn;
+      cloudHelp.hidden = signedIn;
+      if (signedIn) {
+        setCloudStatus(`已同步：${state.cloudUser.email}`);
+      } else {
+        setCloudStatus("尚未登入，資料目前只存於這台裝置。");
+      }
+    }
+
+    async function initializeCloud() {
+      if (!cloud) {
+        setCloudStatus("雲端服務載入失敗，資料目前只存於這台裝置。");
+        return;
+      }
+
+      const { data: { session } } = await cloud.auth.getSession();
+      state.cloudUser = session?.user || null;
+      renderCloudAccount();
+      if (state.cloudUser) {
+        await loadCloudOrders();
+      }
     }
 
     function number(value) {
@@ -976,6 +1197,7 @@
           state.orders = restoredOrders;
           saveOrders();
           render();
+          replaceCloudOrders(restoredOrders);
           window.alert("資料已還原完成。");
         } catch (error) {
           window.alert("無法讀取備份檔，請確認選擇的是本系統匯出的備份檔。");
@@ -1040,27 +1262,32 @@
     }
 
     function upsertOrder(orderId, updater) {
+      let savedOrder;
       state.orders = state.orders.map((order) => {
         if (order.id !== orderId) {
           return order;
         }
 
         const updated = updater(order);
-        return createOrder({ ...order, ...updated, id: order.id });
+        savedOrder = createOrder({ ...order, ...updated, id: order.id });
+        return savedOrder;
       });
 
       saveOrders();
       render();
+      syncOrder(savedOrder);
     }
 
     const state = {
       orders: loadOrders(),
-      editingId: null
+      editingId: null,
+      cloudUser: null
     };
 
     fields.date.value = todayString;
     updatePreview();
     render();
+    initializeCloud();
 
     form.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -1076,9 +1303,10 @@
         paymentStatus: fields.paymentStatus.value
       });
 
+      let savedOrder = order;
       if (state.editingId) {
         state.orders = state.orders.map((item) => item.id === state.editingId
-          ? createOrder({ ...order, id: item.id })
+          ? (savedOrder = createOrder({ ...order, id: item.id }))
           : item);
       } else {
         state.orders.unshift(order);
@@ -1086,6 +1314,7 @@
       saveOrders();
       render();
       resetForm();
+      syncOrder(savedOrder);
     });
 
     [fields.quantity, fields.salePrice, fields.costPrice].forEach((field) => {
@@ -1098,6 +1327,61 @@
     resetButton.addEventListener("click", resetForm);
     printButton.addEventListener("click", () => window.print());
     backupButton.addEventListener("click", backupOrders);
+    cloudForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!cloud) {
+        return;
+      }
+
+      setCloudStatus("正在登入...");
+      const { data, error } = await cloud.auth.signInWithPassword({
+        email: cloudEmail.value.trim(),
+        password: cloudPassword.value
+      });
+      if (error) {
+        setCloudStatus(`登入失敗：${error.message}`);
+        return;
+      }
+
+      state.cloudUser = data.user;
+      cloudPassword.value = "";
+      renderCloudAccount();
+      await loadCloudOrders();
+    });
+    cloudSignup.addEventListener("click", async () => {
+      if (!cloud) {
+        return;
+      }
+
+      setCloudStatus("正在建立帳號...");
+      const { data, error } = await cloud.auth.signUp({
+        email: cloudEmail.value.trim(),
+        password: cloudPassword.value,
+        options: { emailRedirectTo: window.location.href }
+      });
+      if (error) {
+        setCloudStatus(`註冊失敗：${error.message}`);
+        return;
+      }
+
+      cloudPassword.value = "";
+      if (data.session) {
+        state.cloudUser = data.user;
+        renderCloudAccount();
+        await loadCloudOrders();
+      } else {
+        setCloudStatus("確認信已寄出，請完成 Email 驗證後再登入。");
+      }
+    });
+    cloudLogout.addEventListener("click", async () => {
+      if (!cloud) {
+        return;
+      }
+
+      await cloud.auth.signOut();
+      state.cloudUser = null;
+      renderCloudAccount();
+    });
     restoreButton.addEventListener("click", () => restoreFile.click());
     restoreFile.addEventListener("change", () => {
       const [file] = restoreFile.files;
@@ -1141,6 +1425,7 @@
         state.orders = state.orders.filter((order) => order.id !== orderId);
         saveOrders();
         render();
+        deleteCloudOrder(orderId);
       }
     });
   </script>
