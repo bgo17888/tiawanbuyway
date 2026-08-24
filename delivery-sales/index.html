@@ -122,7 +122,8 @@
     }
 
     .cloud-actions button,
-    .cloud-logout {
+    .cloud-logout,
+    .cloud-forgot {
       padding: 10px 12px;
       border-radius: 12px;
       font-size: 13px;
@@ -136,6 +137,14 @@
     .cloud-signup {
       color: var(--ink);
       background: #e9f1e8;
+    }
+
+    .cloud-forgot {
+      width: 100%;
+      margin-top: 8px;
+      color: var(--accent-strong);
+      background: transparent;
+      border: 1px dashed var(--line);
     }
 
     .cloud-logout {
@@ -588,6 +597,11 @@
           <button type="submit" class="cloud-login">登入同步</button>
           <button type="button" class="cloud-signup" id="cloud-signup">首次註冊</button>
         </div>
+        <button type="button" class="cloud-forgot" id="cloud-forgot">忘記密碼</button>
+      </form>
+      <form class="cloud-form" id="cloud-reset-form" hidden>
+        <input id="cloud-new-password" type="password" autocomplete="new-password" minlength="6" placeholder="新密碼（至少 6 位）" required>
+        <button type="submit" class="cloud-login">設定新密碼</button>
       </form>
       <p class="cloud-help" id="cloud-help">首次使用請註冊；收到確認信後再登入。登入後，這台裝置的單據會與雲端同步。</p>
     </section>
@@ -738,7 +752,10 @@
     const cloudStatus = document.getElementById("cloud-status");
     const cloudHelp = document.getElementById("cloud-help");
     const cloudSignup = document.getElementById("cloud-signup");
+    const cloudForgot = document.getElementById("cloud-forgot");
     const cloudLogout = document.getElementById("cloud-logout");
+    const cloudResetForm = document.getElementById("cloud-reset-form");
+    const cloudNewPassword = document.getElementById("cloud-new-password");
     const previewTargets = {
       sale: document.getElementById("saleTotalPreview"),
       cost: document.getElementById("costTotalPreview"),
@@ -896,9 +913,10 @@
 
     function renderCloudAccount() {
       const signedIn = Boolean(state.cloudUser);
-      cloudForm.hidden = signedIn;
+      cloudForm.hidden = signedIn || state.passwordRecovery;
+      cloudResetForm.hidden = !state.passwordRecovery;
       cloudLogout.hidden = !signedIn;
-      cloudHelp.hidden = signedIn;
+      cloudHelp.hidden = signedIn || state.passwordRecovery;
       if (signedIn) {
         setCloudStatus(`已同步：${state.cloudUser.email}`);
       } else {
@@ -918,6 +936,15 @@
       if (state.cloudUser) {
         await loadCloudOrders();
       }
+
+      cloud.auth.onAuthStateChange((event, session) => {
+        if (event === "PASSWORD_RECOVERY") {
+          state.cloudUser = session?.user || null;
+          state.passwordRecovery = true;
+          setCloudStatus("請設定新的登入密碼。");
+          renderCloudAccount();
+        }
+      });
     }
 
     function number(value) {
@@ -1281,7 +1308,8 @@
     const state = {
       orders: loadOrders(),
       editingId: null,
-      cloudUser: null
+      cloudUser: null,
+      passwordRecovery: false
     };
 
     fields.date.value = todayString;
@@ -1373,6 +1401,42 @@
         setCloudStatus("確認信已寄出，請完成 Email 驗證後再登入。");
       }
     });
+    cloudForgot.addEventListener("click", async () => {
+      if (!cloud) {
+        return;
+      }
+
+      const email = cloudEmail.value.trim();
+      if (!email) {
+        setCloudStatus("請先輸入登入 Email，再按忘記密碼。");
+        cloudEmail.focus();
+        return;
+      }
+
+      setCloudStatus("正在寄送密碼重設信...");
+      const { error } = await cloud.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.href
+      });
+      setCloudStatus(error ? `無法寄送重設信：${error.message}` : "重設信已寄出，請到 Email 開啟連結並設定新密碼。");
+    });
+    cloudResetForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!cloud) {
+        return;
+      }
+
+      const { error } = await cloud.auth.updateUser({ password: cloudNewPassword.value });
+      if (error) {
+        setCloudStatus(`新密碼設定失敗：${error.message}`);
+        return;
+      }
+
+      state.passwordRecovery = false;
+      cloudNewPassword.value = "";
+      renderCloudAccount();
+      setCloudStatus(`新密碼已設定，已同步：${state.cloudUser.email}`);
+      await loadCloudOrders();
+    });
     cloudLogout.addEventListener("click", async () => {
       if (!cloud) {
         return;
@@ -1380,6 +1444,7 @@
 
       await cloud.auth.signOut();
       state.cloudUser = null;
+      state.passwordRecovery = false;
       renderCloudAccount();
     });
     restoreButton.addEventListener("click", () => restoreFile.click());
