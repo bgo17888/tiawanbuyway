@@ -353,6 +353,16 @@
       font-size: 13px;
     }
 
+    .edit-link {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #eef5ef;
+      border: 1px solid rgba(47, 122, 77, 0.25);
+      color: var(--good);
+      font-size: 13px;
+    }
+
     .print-button {
       padding: 10px 12px;
       border-radius: 12px;
@@ -493,8 +503,8 @@
     <section class="panel section">
       <div class="section-header">
         <div>
-          <h2>新增送貨單</h2>
-          <p>快速輸入後直接加入今天清單</p>
+          <h2 id="form-title">新增送貨單</h2>
+          <p id="form-subtitle">快速輸入後直接加入今天清單</p>
         </div>
       </div>
 
@@ -507,12 +517,14 @@
 
           <div class="field full">
             <label for="customer">客戶</label>
-            <input id="customer" name="customer" type="text" placeholder="例如：幸福早餐店" required>
+            <input id="customer" name="customer" type="text" list="customer-options" placeholder="例如：幸福早餐店" required>
+            <datalist id="customer-options"></datalist>
           </div>
 
           <div class="field full">
             <label for="product">商品</label>
-            <input id="product" name="product" type="text" placeholder="例如：優能放牧蛋" required>
+            <input id="product" name="product" type="text" list="product-options" placeholder="例如：優能放牧蛋" required>
+            <datalist id="product-options"></datalist>
           </div>
 
           <div class="field">
@@ -574,7 +586,7 @@
         </div>
 
         <div class="actions">
-          <button type="submit" class="primary">加入清單</button>
+          <button type="submit" class="primary" id="submit-button">加入清單</button>
           <button type="button" class="secondary" id="reset-form">清空</button>
         </div>
       </form>
@@ -614,6 +626,11 @@
     const orderList = document.getElementById("order-list");
     const listSubtitle = document.getElementById("list-subtitle");
     const resetButton = document.getElementById("reset-form");
+    const formTitle = document.getElementById("form-title");
+    const formSubtitle = document.getElementById("form-subtitle");
+    const submitButton = document.getElementById("submit-button");
+    const customerOptions = document.getElementById("customer-options");
+    const productOptions = document.getElementById("product-options");
     const printButton = document.getElementById("print-button");
     const printSheet = document.getElementById("print-sheet");
     const backupButton = document.getElementById("backup-button");
@@ -755,6 +772,36 @@
       }, { quantity: 0, sale: 0, cost: 0, profit: 0 });
     }
 
+    function uniqueValues(values) {
+      return [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b, "zh-Hant"));
+    }
+
+    function renderQuickOptions() {
+      const setOptions = (target, values) => {
+        target.replaceChildren(...values.map((value) => {
+          const option = document.createElement("option");
+          option.value = value;
+          return option;
+        }));
+      };
+
+      setOptions(customerOptions, uniqueValues(state.orders.map((order) => order.customer)));
+      setOptions(productOptions, uniqueValues(state.orders.map((order) => order.product)));
+    }
+
+    function applyRecentProductDefaults() {
+      const product = fields.product.value.trim();
+      const recentOrder = state.orders.find((order) => order.product === product);
+      if (!recentOrder) {
+        return;
+      }
+
+      fields.unit.value = recentOrder.unit;
+      fields.salePrice.value = recentOrder.salePrice;
+      fields.costPrice.value = recentOrder.costPrice;
+      updatePreview();
+    }
+
     function renderSummary(currentDateOrders) {
       const totals = getTotals(currentDateOrders);
 
@@ -827,6 +874,7 @@
             <div class="order-actions">
               <div class="action-group">
                 <button class="chip" data-action="delivery">切換送貨狀態</button>
+                <button class="edit-link" data-action="edit">修改單據</button>
                 <span class="badge ${getPaymentClass(order.paymentStatus)}">${order.paymentStatus}</span>
               </div>
               <div class="action-group">
@@ -943,11 +991,13 @@
       renderSummary(currentDateOrders);
       renderOrders(currentDateOrders);
       renderPrintSheet(currentDateOrders);
+      renderQuickOptions();
       updatePreview();
     }
 
     function resetForm() {
       form.reset();
+      state.editingId = null;
       fields.date.value = todayString;
       fields.quantity.value = 1;
       fields.unit.value = "箱";
@@ -955,7 +1005,37 @@
       fields.costPrice.value = 0;
       fields.deliveryStatus.value = "未送";
       fields.paymentStatus.value = "未收";
+      formTitle.textContent = "新增送貨單";
+      formSubtitle.textContent = "快速輸入後直接加入今天清單";
+      submitButton.textContent = "加入清單";
       updatePreview();
+      fields.customer.focus();
+    }
+
+    function startEditing(orderId) {
+      const order = state.orders.find((item) => item.id === orderId);
+      if (!order) {
+        return;
+      }
+
+      state.editingId = orderId;
+      Object.entries({
+        date: order.date,
+        customer: order.customer,
+        product: order.product,
+        quantity: order.quantity,
+        unit: order.unit,
+        salePrice: order.salePrice,
+        costPrice: order.costPrice,
+        deliveryStatus: order.deliveryStatus,
+        paymentStatus: order.paymentStatus
+      }).forEach(([key, value]) => { fields[key].value = value; });
+
+      formTitle.textContent = "修改送貨單";
+      formSubtitle.textContent = "修改完成後按「儲存修改」";
+      submitButton.textContent = "儲存修改";
+      updatePreview();
+      form.scrollIntoView({ behavior: "smooth", block: "start" });
       fields.customer.focus();
     }
 
@@ -974,7 +1054,8 @@
     }
 
     const state = {
-      orders: loadOrders()
+      orders: loadOrders(),
+      editingId: null
     };
 
     fields.date.value = todayString;
@@ -995,7 +1076,13 @@
         paymentStatus: fields.paymentStatus.value
       });
 
-      state.orders.unshift(order);
+      if (state.editingId) {
+        state.orders = state.orders.map((item) => item.id === state.editingId
+          ? createOrder({ ...order, id: item.id })
+          : item);
+      } else {
+        state.orders.unshift(order);
+      }
       saveOrders();
       render();
       resetForm();
@@ -1005,6 +1092,8 @@
       field.addEventListener("input", updatePreview);
     });
 
+    fields.product.addEventListener("change", applyRecentProductDefaults);
+    fields.product.addEventListener("blur", applyRecentProductDefaults);
     fields.date.addEventListener("change", render);
     resetButton.addEventListener("click", resetForm);
     printButton.addEventListener("click", () => window.print());
@@ -1033,6 +1122,11 @@
         upsertOrder(orderId, (order) => ({
           deliveryStatus: cycleValue(order.deliveryStatus, deliveryCycle)
         }));
+        return;
+      }
+
+      if (action === "edit") {
+        startEditing(orderId);
         return;
       }
 
